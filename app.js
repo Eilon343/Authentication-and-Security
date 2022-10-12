@@ -4,9 +4,9 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-//using md5 to turn the user's password to a hash function in order to secure the password better and getting rid of encryption
-const md5 = require('md5');
-// const encrypt = require("mongoose-encryption");
+//using bcrypt to turn the user's password to a hash function in order to secure the password better and getting rid of encryption
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 
 const app = express();
@@ -41,34 +41,44 @@ app.get("/login", function(req,res){
     res.render("login");
 });
 
+//using bcrypt to hash the password even more secure then md5 because of the salt rounds which will secure user password better
+//more salt rounds == more secure == slower
 app.post("/register", function(req,res){
-    const newUser = new User({
-        email: req.body.username,
-        password: md5(req.body.password)
-    });
-    newUser.save(function(err){
-        if(!err){
-            res.render("secrets");
-        }
-        else{
-            console.log(err);
-        }
+    bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
+        const newUser = new User({
+            email: req.body.username,
+            password: hash
+        });
+        newUser.save(function(err){
+            if(!err){
+                res.render("secrets");
+            }
+            else{
+                console.log(err);
+            }
+        });
     });
 });
 
 app.post("/login", function(req,res){
     const username = req.body.username;
-    //using md5 on login password in order to compare it with the hash that created when user registerd
-    const password = md5(req.body.password);
+    //using bcrypt on login password in order to compare it with the hash that created when user registerd
+    const password = req.body.password;
     User.findOne({email: username}, function(err, foundUser){
         if (err){
             console.log(err);
         }
         else{
            if(foundUser){
-            if(foundUser.password === password){
-                res.render("secrets");
-            }
+            //comparing user login password against the hash that stored in the DB
+            bcrypt.compare(password, foundUser.password, function(err, result) {
+                if(result){
+                    res.render("secrets");
+                }
+                else{
+                    res.send("Password incorrect");
+                }
+            });
            } 
         }
     });
