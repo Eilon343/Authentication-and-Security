@@ -29,7 +29,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongoose.connect("mongodb+srv://admin:admin@secretsdb.f8njcbg.mongodb.net/");
+mongoose.connect("mongodb+srv://admin:admin@secretsdb.f8njcbg.mongodb.net/userDB");
 
 const userSchema = new mongoose.Schema ({
     email: String,
